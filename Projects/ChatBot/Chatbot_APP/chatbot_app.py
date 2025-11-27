@@ -15,12 +15,12 @@ os.environ["LANGCHAIN_PROJECT"]="Chatbot With Ollama"
 
 Prompt=ChatPromptTemplate.from_messages(
     [
-        ('system',"You are a helpful massistant . Please  repsonse to the user queries"),
+        ('system',"You are a helpful massistant . Please repsonde to the user queries"),
         ('user',"Question{question}")
     ]
 )
 
-def Get_Response(user_input,temperature,max_tokens):
+def Get_Response(user_input,llm_model,temperature,max_tokens):
     model=OllamaLLM(model="llama3.1")
     output_parser=StrOutputParser()
     chain=Prompt|model|output_parser
@@ -31,7 +31,7 @@ def Get_Response(user_input,temperature,max_tokens):
 st.title('Q&A Chatbot')
 
 #Choosing the LLM Model
-llm=st.sidebar.selectbox('Select the model',['llama3.1'])
+llm_model=st.sidebar.selectbox('Select the model',['llama3.1'])
 
 #Adding sliders for adjusting the model parameters
 temperature=st.sidebar.slider('Temperature',min_value=0.0,max_value=1.0,value=0.6)
@@ -42,7 +42,7 @@ st.write('Give you query!')
 user_input=st.text_input('You:')
 
 if user_input:
-    response=Get_Response(user_input,temperature,max_tokens)
+    response=Get_Response(user_input,llm_model,temperature,max_tokens)
     st.write(response)
 else:
     st.write('Please provide the query.')
