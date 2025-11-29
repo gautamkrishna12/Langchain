@@ -60,20 +60,21 @@ st.set_page_config(page_title="Chat with PDF", layout="wide")
 
 st.markdown(
     """
-    <div style="background-color:#4CAF50;padding:20px;border-radius:10px;margin-bottom:20px;">
-        <h1 style="color:white;text-align:center;">Chat with PDF</h1>
-        <p style="color:white;text-align:center;margin-top:-10px;">Upload a PDF and start chatting with it</p>
+    <div style="background-color:#4CAF50;padding:25px;border-radius:12px;margin-bottom:25px;">
+        <h1 style="color:white;text-align:center;margin-bottom:5px;">Chat with PDF</h1>
+        <p style="color:white;text-align:center;margin-top:-5px;font-size:16px;">
+            Upload a PDF and start asking questions about it
+        </p>
     </div>
     """,
     unsafe_allow_html=True
 )
 
-if "pdf_path" not in st.session_state:
-    st.session_state.pdf_path = ""
-
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    uploaded_file = st.file_uploader("Upload your PDF file", type="pdf", label_visibility="collapsed")
+    uploaded_file = st.file_uploader(
+        "Upload your PDF file", type="pdf", label_visibility="collapsed"
+    )
 
 if uploaded_file:
     temp_dir = tempfile.gettempdir()
@@ -83,30 +84,54 @@ if uploaded_file:
     st.session_state.pdf_path = str(temp_path)
     st.success(f"Selected PDF: `{uploaded_file.name}`")
 
-
-if st.session_state.pdf_path:
+if "pdf_path" in st.session_state and st.session_state.pdf_path:
     pdf_file_path = Path(st.session_state.pdf_path)
     if pdf_file_path.exists() and pdf_file_path.suffix.lower() == ".pdf":
         st.info(f"Ready to process PDF: `{pdf_file_path.name}`")
     else:
-        st.error("Selected file is not valid")
+        st.error(" Selected file is not valid")
 else:
     st.info("Please select a PDF file to continue.")
 
-if st.button('Embedd Document'):
-    Create_VectorDB(st.session_state.pdf_path)
-    st.write('Vector DataBase Created Successfully')
 
-user_prompt=st.text_input("Enter the query here")
+if st.session_state.get("pdf_path"):
+    if st.button(' Embed Document'):
+        Create_VectorDB(st.session_state.pdf_path)
+        st.write('Vector DataBase Created Successfully')
+
+st.markdown(
+    """
+    <div style="border:2px solid #4CAF50; padding:20px; border-radius:12px; margin-top:25px;">
+        <h3 style="margin-bottom:15px;">Ask a question about your PDF</h3>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+user_prompt = st.text_input("Enter your query here...")
 
 if user_prompt:
-    document_chain=create_stuff_documents_chain(llm_model,Prompt)
-    retriever=st.session_state.vectordb.as_retriever()
-    retrieval_chain=create_retrieval_chain(retriever,document_chain)
+    if "vectordb" not in st.session_state:
+        st.warning("Please embed the PDF first!")
+    else:
+        document_chain = create_stuff_documents_chain(llm_model, Prompt)
+        retriever = st.session_state.vectordb.as_retriever()
+        retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    start=time.process_time()
-    response=retrieval_chain.invoke({'input':user_prompt})
-    print(f"Response time: {time.process_time()-start}")
+        start = time.process_time()
+        response = retrieval_chain.invoke({'input': user_prompt})
+        elapsed_time = time.process_time() - start
+        st.info(f"Response time: {elapsed_time:.2f} seconds")
 
-    st.write(response['answer'])
-
+        st.markdown(
+        f"""
+        <div style="
+            border: 1px solid #d9d9d9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;">
+            <strong>Response:</strong><br>{response['answer']}
+        </div>
+        """,
+         unsafe_allow_html=True
+        )
